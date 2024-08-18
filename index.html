@@ -20646,10 +20646,10 @@ const info = `<table>
 <tr><th>target</th><th>event</th><th>effect</th></tr>
 `+totable([
 ["nodes", "ctrl left click", "delete"],
-["nodes", "alt left click", "modify text (parsed in markdown)"],
-["nodes", "left drag", "move"],
-["nodes", "right drag", "link to another node"],
-["nodes", "ctrl right drag", "make child of another node/unchild if target is self"],
+["nodes", "alt right click", "modify text (parsed in markdown)"],
+["nodes", "alt left drag", "move"],
+["nodes", "left drag", "link to another node"],
+["nodes", "ctrl left drag", "make child of another node/unchild if target is self"],
 ["nodes", "ctrl alt left click", "toggle visibility"],
 ["nodes", "ctrl alt right click", "toggle static position"],
 ["nodes", "shift left click", "reduce size"],
@@ -20949,7 +20949,7 @@ const dragnode = d3.drag() // forcé de faire une seule fonction de drag par él
 	.filter( mods([0, "2", 0])) // on laisse possibilité de ctrl right, pour désigner un parent
 	.on('start', (ev, e) => {
 		force.stop();
-		if (ev.sourceEvent.buttons != 2) { // pas clic droit
+		if ((ev.sourceEvent.buttons != 2) && mods([0, 1, 0])) { // alt clic pas droit
 			if (e.parent) { // child node
 				e.dx = ev.x - e.parent.x;
 				e.dy = ev.y - e.parent.y;
