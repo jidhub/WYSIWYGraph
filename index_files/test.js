@@ -423,6 +423,8 @@ const removelink = (index) => {
 	links._groups[0].splice(index, 1)[0].remove();
 	restart();
 }
+const quotes = /'"'/g
+const doublequotes = /'""'/g
 const parse = (s) => { // parse a file's content for nodes & links
 	force.stop(); 
 	nodedata.length = 0; // empty data
@@ -431,11 +433,15 @@ const parse = (s) => { // parse a file's content for nodes & links
 	force.force('link', d3.forceLink(linkdata));
 	d3.selectAll("circle, line, foreignObject").remove(); // remove elements
 	[nodes, links, labels].forEach(x => x._groups[0] = []); // empty element lists
-	l = s.trim().split("\n").filter(x => x[0] != "#").map(s => s.split("\t").map(s => s.split(",").map(s => s.trim() )));
+	L = s.trim().split("\n")
+	l=[L[0].map(s => s.split("\t").map(s => s.split(",").map(s => s.trim() )))];
 	scale = Number(l[0][1][0]); // take the first line for parameters
 	running = !l[0][1][1].slice(4);
 	speed = (Number(l[0][1][2]));
-	l.slice(1).forEach(l => {
+	var textLines = 0;
+	L.slice(1).forEach(L => {
+	    if (textLines==0) {
+	        l=[L[0].map(s => s.split("\t").map(s => s.split(",")))];
 		let obj = {};
 		let addprops = () => { 
 			for (let i=0;i<l[0].length;i++) { 
@@ -456,16 +462,34 @@ const parse = (s) => { // parse a file's content for nodes & links
 			addprops();
 			if (obj.parent) obj.parent = { x : obj.x-obj.dx, y : obj.y-obj.dy, index : Number(obj.parent.split("#")[1].slice(0, -1)) };
 			obj.index = nodedata.length;
-			addnode(obj);
+			if (l[0][l.length-1]=="tx" && obj.tx[0]=='"') {
+				textLines=1;
+				L=l[1].slice(l[0].length-1).join(',').slice(1) // slice "
+			} else {
+				addnode(obj);
+			}
 		}
+	    }
+	    if (textLines>0) {
+		    var M=L.replace(doublequotes,'"')
+		    if (textLines==1) { obj.tx=M } else { obj.tx+="\n"+M }
+		    if ( ((L.match(quotes)||[])%2) == 0 ) { textLines+=1; }
+		    else { 
+			obj.tx=obj.tx.splice(0,-1) // slice "
+			addnode(obj)
+		        textLines=0
+		    }
+	    }
 	});
 	nodedata.forEach(x => {if (x.parent) x.parent = nodedata[x.parent.index] }); // transformer les parents on objets
 	restart();
 }
 const format = (o) => { // format the lists of keys & values
 	let prop = Object.keys(o).filter(x => !["s", "t", "source", "target", "index", "x1", "x2", "y1", "y2", "parent"].includes(x)); // remove properties that should not be written to file
-	let vals = prop.map(p => typeof(o[p]) == "number"?Math.floor(o[p]):encodeURIComponent(o[p])); // round to make parsing numbers less of a bore & save space
-	return prop.join(",")+"\t"+vals.join(",");
+	let vals = prop.slice(0,-1).map(p => typeof(o[p]) == "number"?Math.floor(o[p]):o[p]); // round to make parsing numbers less of a bore & save space
+	let lastval = prop.slice(-1).map(p => typeof(o[p]) == "number"?Math.floor(o[p]):o[p])[0]; // round to make parsing numbers less of a bore & save space
+	if (lastval.match(quotes)) { lastval='"'+lastval.replace(quotes,'""')+'"' }
+	return prop.join(",")+"\t"+vals.join(",")+lastval;
 }
 const stringify = () => (
 	["scale,running,speed"+"\t"+scale+","+running+","+speed].concat(
@@ -550,7 +574,7 @@ body.on("keydown", () => {
 			.append("a")
 			.attr("id", "dowa");
 		dowa.href = fileurl;
-		dowa.download = "DGE-"+Math.floor(Date.now()/1000).toString()+".txt"; // default file name, the number is in seconds since epoch
+		dowa.download = "DGE-"+Math.floor(Date.now()/1000).toString()+".md"; // default file name, the number is in seconds since epoch
 		dowa.click();
 		dowa.remove();
 	} else if (key == "ArrowUp") {
