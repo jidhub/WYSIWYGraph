@@ -20646,14 +20646,14 @@ const info = `<table>
 <tr><th>target</th><th>event</th><th>effect</th></tr>
 `+totable([
 ["nodes", "ctrl right click", "delete"],
-["nodes", "alt right click", "modify text (parsed in markdown)"],
-["nodes", "alt left drag", "move"],
+["nodes", "right click", "modify text (parsed in markdown)"],
+["nodes", "shift left drag", "move"],
 ["nodes", "left drag", "link to another node"],
 ["nodes", "ctrl left drag", "make child of another node/unchild if target is self"],
 ["nodes", "ctrl alt left click", "toggle visibility"],
 ["nodes", "ctrl alt right click", "toggle static position"],
-["nodes", "shift left click", "reduce size"],
-["nodes", "shift right click", "augment size"],
+["nodes", "alt left click", "reduce size"],
+["nodes", "alt right click", "augment size"],
 ["links", "ctrl left click", "delete"],
 ["links", "alt drag", "give one end an offset from the node"],
 ["links", "shift click", "reverse arrow direction (in directed graphs)"],
@@ -20946,10 +20946,15 @@ const tick = () => { // updates HTML coordinates (also some data manipulation)
 	}
 }
 const dragnode = d3.drag() // forcé de faire une seule fonction de drag par élément
-	.filter( mods([0, "2", 0])) // on laisse possibilité de ctrl right, pour désigner un parent
+.filter( e => { return e.button==0 ; } ) // on laisse possibilité de shift
+	// .filter( mods([0, 1, 1])) // on laisse possibilité de ctrl alt
+	// .filter( mods([0, "0", 0])) // on laisse possibilité de ctrl right, pour désigner un parent
+	// .filter( mods([0, 0, "0"])) // on laisse possibilité de alt right, pour désigner un parent
 	.on('start', (ev, e) => {
 		force.stop();
-		if ((ev.sourceEvent.buttons != 2) && mods([0, 0, 1])) { // alt clic pas droit
+		// if (mods([0, 0, 1])) { // alt clic pas droit
+		if (ev.sourceEvent.shiftKey) { // alt clic pas droit
+		// if ((ev.sourceEvent.buttons != 2) && mods([0, 0, 1])) { // alt clic pas droit
 			if (e.parent) { // child node
 				e.dx = ev.x - e.parent.x;
 				e.dy = ev.y - e.parent.y;
@@ -20976,7 +20981,9 @@ const dragnode = d3.drag() // forcé de faire une seule fonction de drag par él
 		}
 	})
 	.on('drag', (ev, e) => {
-		if ((ev.sourceEvent.buttons != 2) && mods([0, 0, 1])) { // alt clic pas droit
+		// if ((ev.sourceEvent.buttons != 2) && mods([0, 0, 1])) { // alt clic pas droit
+		// if (mods([0, 0, 1])) { // alt clic pas droit
+		if (ev.sourceEvent.shiftKey) { // alt clic pas droit
 			if (e.parent) {
 				e.dx = ev.x - e.parent.x;
 				e.dy = ev.y - e.parent.y;
@@ -21007,8 +21014,24 @@ const dragnode = d3.drag() // forcé de faire une seule fonction de drag par él
 						index : linkdata.length,
 						u : true,
 					};
+					if (e == target.__data__) { // edit
+// 		let target = e.target.__data__;
+// 		let indi = makepopup("inputdiv");
+// 		indi.append("textarea").attr("id", "textinp");
+// 		indi.append("input").attr("class", "cancel").attr("type", "button").attr("value", "Cancel").attr("onclick", "inputdiv.remove()");
+// 		indi.append("input").attr("class", "valid").attr("type", "button").attr("value", "Save").attr("onclick", "idfinished(textinp.value); inputdiv.remove()");
+// 		textinp.innerHTML = target.tx || "";
+// 		idfinished = (s) => {
+// 			target.tx = s;
+// 			force.nodes(nodedata);
+// 			labels.data(nodedata);
+// 			labels._groups[0][target.index].innerHTML = s;
+			// restart();
+			// }
+			} else {
 					if (e != target.__data__ && !linkdata.some(x => x.source == e && x.target == target.__data__)) // arrête pas déjà existante
 						addlink(link);
+						}
 				} else {
 					if (e != target.__data__) { // make child
 						e.parent = target.__data__;
@@ -21203,7 +21226,21 @@ const stringify = () => (
 	))).join("\n")
 );
 svg.on("mousedown", (e) => { // clic
-	if ( mods([0,1,1])(e) && e.target.nodeName == "circle") {
+	 if (mods([1, 0, 0])(e) && e.button != 4 && e.target.nodeName == "circle") { // edit
+		let target = e.target.__data__;
+		let indi = makepopup("inputdiv");
+		indi.append("textarea").attr("id", "textinp");
+		indi.append("input").attr("class", "cancel").attr("type", "button").attr("value", "Cancel").attr("onclick", "inputdiv.remove()");
+		indi.append("input").attr("class", "valid").attr("type", "button").attr("value", "Save").attr("onclick", "idfinished(textinp.value); inputdiv.remove()");
+		textinp.innerHTML = target.tx || "";
+		idfinished = (s) => {
+			target.tx = s;
+			force.nodes(nodedata);
+			labels.data(nodedata);
+			labels._groups[0][target.index].innerHTML = s;
+			restart();
+		}
+	} else if ( mods([0,1,1])(e) && e.target.nodeName == "circle") {
 		let target = e.target.__data__; // static
 		if (e.button != 2) {
 			if (target.sx) {
@@ -21219,7 +21256,7 @@ svg.on("mousedown", (e) => { // clic
 			if (!target.hidden) delete target.hidden;
 			redo();
 		}
-	} else if (mods([1,0,0])(e)) {
+	} else if (mods([0,0,1])(e)) {
 		if (e.target.nodeName == "circle") { // change node size
 			e.target.__data__.size = (e.target.__data__.size || 8) + e.button - 1;
 		} else if (e.target.nodeName == "line") {
@@ -21245,20 +21282,6 @@ svg.on("mousedown", (e) => { // clic
 			removelink(elem.__data__.index);
 		} else if (elem.nodeName == "circle") {
 			removenode(elem.__data__.index);
-		}
-	} else if (mods([0, 0, 1])(e) && e.button != 2 && e.target.nodeName == "circle") { // rename
-		let target = e.target.__data__;
-		let indi = makepopup("inputdiv");
-		indi.append("textarea").attr("id", "textinp");
-		indi.append("input").attr("class", "cancel").attr("type", "button").attr("value", "Cancel").attr("onclick", "inputdiv.remove()");
-		indi.append("input").attr("class", "valid").attr("type", "button").attr("value", "Save").attr("onclick", "idfinished(textinp.value); inputdiv.remove()");
-		textinp.innerHTML = target.tx || "";
-		idfinished = (s) => {
-			target.tx = s;
-			force.nodes(nodedata);
-			labels.data(nodedata);
-			labels._groups[0][target.index].innerHTML = s;
-			restart();
 		}
 	}
 });
