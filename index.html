@@ -20976,7 +20976,7 @@ const dragnode = d3.drag() // forcé de faire une seule fonction de drag par él
 		}
 	})
 	.on('drag', (ev, e) => {
-		if (ev.sourceEvent.buttons != 2) {
+		if ((ev.sourceEvent.buttons != 2) && mods([0, 0, 1])) { // alt clic pas droit
 			if (e.parent) {
 				e.dx = ev.x - e.parent.x;
 				e.dy = ev.y - e.parent.y;
