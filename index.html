@@ -20645,7 +20645,7 @@ const totable = (x) => "<tr>"+x.map(y => "<td>"+y.join("</td><td>")+"</td>").joi
 const info = `<table>
 <tr><th>target</th><th>event</th><th>effect</th></tr>
 `+totable([
-["nodes", "ctrl left click", "delete"],
+["nodes", "ctrl right click", "delete"],
 ["nodes", "alt right click", "modify text (parsed in markdown)"],
 ["nodes", "alt left drag", "move"],
 ["nodes", "left drag", "link to another node"],
@@ -21239,7 +21239,7 @@ svg.on("mousedown", (e) => { // clic
 				index : nodedata.length,
 			})
 		}
-	} else if (mods([0,1,0])(e) && e.target != svge) { // deletion (nodes & links)
+	} else if ((ev.sourceEvent.buttons != 0) && mods([0,1,0])(e) && e.target != svge) { // deletion (nodes & links), ctrl + clic pas gauche
 		let elem = e.target;
 		if (elem.nodeName == "line") {
 			removelink(elem.__data__.index);
