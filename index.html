@@ -20949,7 +20949,7 @@ const dragnode = d3.drag() // forcé de faire une seule fonction de drag par él
 	.filter( mods([0, "2", 0])) // on laisse possibilité de ctrl right, pour désigner un parent
 	.on('start', (ev, e) => {
 		force.stop();
-		if ((ev.sourceEvent.buttons != 2) && mods([0, 1, 0])) { // alt clic pas droit
+		if ((ev.sourceEvent.buttons != 2) && mods([0, 0, 1])) { // alt clic pas droit
 			if (e.parent) { // child node
 				e.dx = ev.x - e.parent.x;
 				e.dy = ev.y - e.parent.y;
